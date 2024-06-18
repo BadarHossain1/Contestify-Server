@@ -38,6 +38,7 @@ async function run() {
     
     const db = client.db('Contestify')
     const advertiseCollection = db.collection('promotion')
+    const contestCollection = db.collection('contest')
 
 
     
@@ -46,6 +47,13 @@ async function run() {
         console.log(result)
         res.send(result);
     })
+    app.get('/AllContest', async (req,res)=>{
+        const result = await contestCollection.find().toArray();
+        console.log(result)
+        res.send(result);
+    })
+
+
 
 
     await client.db("admin").command({ ping: 1 });
@@ -64,5 +72,5 @@ app.get('/', (req, res) => {
 
 
 app.listen(port, () => {
-    console.log(`StayVista is running on port ${port}`)
+    console.log(`Contestify is running on port ${port}`)
   })
