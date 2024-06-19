@@ -11,10 +11,10 @@ const port = process.env.PORT || 5000;
 
 //middleware
 const corsOptions = {
-    origin: ['http://localhost:5173', 'http://localhost:5174'],
-    credentials: true,
-    optionSuccessStatus: 200,
-  }
+  origin: ['http://localhost:5173', 'http://localhost:5174'],
+  credentials: true,
+  optionSuccessStatus: 200,
+}
 
 app.use(cors(corsOptions))
 app.use(express.json())
@@ -35,23 +35,52 @@ const client = new MongoClient(uri, {
 
 async function run() {
   try {
-    
+
     const db = client.db('Contestify')
     const advertiseCollection = db.collection('promotion')
     const contestCollection = db.collection('contest')
+    const userCollection = db.collection('user')
+
+    app.put('/user', async (req, res) => {
+      const user = req.body
+
+      const query = { email: user?.email }
+      
+      
+
+      // save user for the first time
+      const options = { upsert: true }
+      const updateDoc = {
+        $set: {
+          ...user,
+          timestamp: Date.now(),
+        },
+      }
+      const result = await userCollection.updateOne(query, updateDoc, options)
+      
+      res.send(result)
+
+    })
 
 
+    app.get('/users', async (req, res)=>{
+      const result = await userCollection.find().toArray()
+      res.send(result)
     
-    app.get('/promotion', async (req,res)=>{
-        const result = await advertiseCollection.find().toArray();
-        console.log(result)
-        res.send(result);
     })
-    app.get('/AllContest', async (req,res)=>{
-        const result = await contestCollection.find().toArray();
-        console.log(result)
-        res.send(result);
+
+
+    app.get('/promotion', async (req, res) => {
+      const result = await advertiseCollection.find().toArray();
+      console.log(result)
+      res.send(result);
     })
+    app.get('/AllContest', async (req, res) => {
+      const result = await contestCollection.find().toArray();
+      console.log(result)
+      res.send(result);
+    })
+
 
 
 
@@ -67,10 +96,10 @@ run().catch(console.dir);
 
 
 app.get('/', (req, res) => {
-    res.send('Hello there from contestify..')
-  })
+  res.send('Hello there from contestify..')
+})
 
 
 app.listen(port, () => {
-    console.log(`Contestify is running on port ${port}`)
-  })
+  console.log(`Contestify is running on port ${port}`)
+})
