@@ -21,7 +21,7 @@ app.use(express.json())
 // app.use(cookieParser())
 
 
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.lblkdq0.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
 
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
@@ -62,6 +62,30 @@ async function run() {
 
     })
 
+    app.patch('/users/update', async (req, res) => {
+      try {
+        const { email, role } = req.body; 
+        const query = { email: email };
+        const updateDoc = {
+          $set: {
+            role: role,
+            timestamp: Date.now(),
+          }
+        };
+        const result = await userCollection.updateOne(query, updateDoc);
+        res.send(result);
+      } catch (error) {
+        console.error(error);
+        res.status(500).send('Failed to update user role');
+      }
+    });
+    
+    app.post('/AddContest',async (req, res) =>{
+      const contest = req.body;
+      const result = await contestCollection.insertOne(contest)
+      res.send(result);
+    })
+
 
     app.get('/users', async (req, res)=>{
       const result = await userCollection.find().toArray()
@@ -72,12 +96,29 @@ async function run() {
 
     app.get('/promotion', async (req, res) => {
       const result = await advertiseCollection.find().toArray();
-      console.log(result)
+      
       res.send(result);
     })
-    app.get('/AllContest', async (req, res) => {
-      const result = await contestCollection.find().toArray();
-      console.log(result)
+    app.get('/AllContest/id/:id', async (req, res) => {
+      const params = req.params.id;
+      
+      const result = await contestCollection.find({_id: new ObjectId(params)}).toArray();
+    
+      
+      res.send(result);
+    })
+
+    app.get('/AllContest', async (req,res) =>{
+      const result = await contestCollection.find().toArray()
+      res.send(result)
+    
+    })
+
+    app.get('/MyCreatedContest/:email', async (req,res)=>{
+      const email = req.params.email;
+      console.log(email)
+
+      const result = await contestCollection.find({CreatorEmail: email}).toArray();
       res.send(result);
     })
 
