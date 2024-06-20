@@ -150,6 +150,14 @@ async function run() {
       res.send(result);
     })
 
+    app.get('/AllContest/:search', async (req, res) =>{
+      const search = req.params.search;
+      console.log(search);
+      const result = await contestCollection.find({Category: search}).toArray()
+      res.send(result)
+    
+    })
+
     app.get('/AllContest', async (req,res) =>{
       const result = await contestCollection.find().toArray()
       res.send(result)
