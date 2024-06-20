@@ -71,6 +71,27 @@ async function run() {
   });
 
 
+    app.put('/comment', async (req,res) =>{
+      try {
+        const { _id, text } = req.body;
+      
+
+        const query = { _id: new ObjectId(_id) };
+        const updateDoc = {
+          $push: {
+            comment: text,
+          }
+        };
+        const result = await contestCollection.updateOne(query, updateDoc);
+        res.send(result);
+      } catch (error) {
+        console.error(error);
+        res.status(500).send('Failed to add comment');
+      }
+    
+    })
+
+
     // updating stuff going on here
     app.patch('/users/update', async (req, res) => {
       try {
@@ -119,6 +140,17 @@ async function run() {
     app.post('/AddRequest',async (req, res) =>{
       const contest = req.body;
       const result = await requestCollection.insertOne(contest)
+      res.send(result);
+    })
+
+
+    //delete operation here
+
+    app.delete('/delete/:id', async (req,res)=>{
+      const id = req.params.id;
+      console.log(id);
+
+      const result = await contestCollection.deleteOne({_id: new ObjectId(id)});
       res.send(result);
     })
 
