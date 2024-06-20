@@ -40,30 +40,42 @@ async function run() {
     const advertiseCollection = db.collection('promotion')
     const contestCollection = db.collection('contest')
     const userCollection = db.collection('user')
+    const requestCollection = db.collection('Requested')
 
     app.put('/user', async (req, res) => {
-      const user = req.body
-
-      const query = { email: user?.email }
-      
-      
-
-      // save user for the first time
-      const options = { upsert: true }
-      const updateDoc = {
-        $set: {
-          ...user,
-          timestamp: Date.now(),
-        },
+      try {
+          const user = req.body;
+          const query = { email: user?.email };
+          const existingUser = await userCollection.findOne(query);
+  
+          if (existingUser) {
+            
+              return res.send(existingUser);
+          }
+  
+          const newUser = {
+              ...user,
+              role: 'user', 
+              status: 'Verified',
+              timestamp: Date.now(),
+          };
+          const options = { upsert: true };
+          const updateDoc = { $set: newUser };
+          const result = await userCollection.updateOne(query, updateDoc, options);
+  
+          res.send(result);
+      } catch (error) {
+          console.error(error);
+          res.status(500).send('Failed to save user');
       }
-      const result = await userCollection.updateOne(query, updateDoc, options)
-      
-      res.send(result)
+  });
 
-    })
 
+    // updating stuff going on here
     app.patch('/users/update', async (req, res) => {
       try {
+
+
         const { email, role } = req.body; 
         const query = { email: email };
         const updateDoc = {
@@ -79,10 +91,34 @@ async function run() {
         res.status(500).send('Failed to update user role');
       }
     });
+
+
+    app.patch('/status/update/:id', async (req,res) =>{
+      const id = req.params.id;
+      
+      const query = {_id: new ObjectId(id)};
+      const updateDoc = {
+        $set: {
+          status: 'Approved',
+          timestamp: Date.now(),
+        }
+      };
+      const result = await contestCollection.updateOne(query, updateDoc);
+      res.send(result);
+    })
     
+
+    // we post here 
     app.post('/AddContest',async (req, res) =>{
       const contest = req.body;
       const result = await contestCollection.insertOne(contest)
+      res.send(result);
+    })
+
+
+    app.post('/AddRequest',async (req, res) =>{
+      const contest = req.body;
+      const result = await requestCollection.insertOne(contest)
       res.send(result);
     })
 
@@ -91,6 +127,12 @@ async function run() {
       const result = await userCollection.find().toArray()
       res.send(result)
     
+    })
+
+    app.get('/user/:email', async (req, res) =>{
+      const email = req.params.email;
+      const result = await userCollection.findOne({email: email});
+      res.send(result);
     })
 
 
