@@ -2,6 +2,8 @@ const express = require('express');
 const app = express()
 require('dotenv').config();
 const cors = require('cors')
+const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
+
 
 // const cookieParser = require('cookie-parser')
 
@@ -41,6 +43,32 @@ async function run() {
     const contestCollection = db.collection('contest')
     const userCollection = db.collection('user')
     const requestCollection = db.collection('Requested')
+    const bookingCollection = db.collection('bookings')
+
+
+    //PAYMENT INTENT
+
+    app.post('/create-payment-intent', async (req, res)=>{
+      const price = req.body.price;
+      const priceInCent = parseFloat(price)*100;
+
+      if(!price || priceInCent <1) return 
+      //generate pay clientSecret
+
+      const {client_secret} = await stripe.paymentIntents.create({
+        amount: priceInCent,
+        currency: "usd",
+        // In the latest version of the API, specifying the `automatic_payment_methods` parameter is optional because Stripe enables its functionality by default.
+        automatic_payment_methods: {
+          enabled: true,
+        },
+      })
+
+      res.send({clientSecret: client_secret});
+      
+
+
+    })
 
     app.put('/user', async (req, res) => {
       try {
@@ -127,12 +155,36 @@ async function run() {
       const result = await contestCollection.updateOne(query, updateDoc);
       res.send(result);
     })
+
+
+    app.patch('/count/update/:id', async (req,res)=>{
+      const id = req.params.id;
+      const {addCount} = req.body;
+      console.log('count from server', addCount);
+      const query = {_id: new ObjectId(id)};
+      const updateDoc = {
+        $set:{
+          participantsCount: addCount,
+
+        }
+
+        
+      }
+
+      const result = await contestCollection.updateOne(query, updateDoc);
+      res.send(result);
+    })
     
 
     // we post here 
     app.post('/AddContest',async (req, res) =>{
       const contest = req.body;
       const result = await contestCollection.insertOne(contest)
+      res.send(result);
+    })
+    app.post('/booking',async (req, res) =>{
+      const bookingData = req.body;
+      const result = await bookingCollection.insertOne(bookingData)
       res.send(result);
     })
 
@@ -142,6 +194,9 @@ async function run() {
       const result = await requestCollection.insertOne(contest)
       res.send(result);
     })
+
+
+
 
 
     //delete operation here
