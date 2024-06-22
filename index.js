@@ -324,6 +324,11 @@ async function run() {
 
     })
     
+    app.get('/favorite', async (req, res) => {
+      const result = await favoriteCollection.find().toArray()
+      res.send(result)
+
+    })
 
     app.get('/user/:email', async (req, res) => {
       const email = req.params.email;
