@@ -35,6 +35,29 @@ const client = new MongoClient(uri, {
   }
 });
 
+//middleware 
+
+const logger = (req, res, next) =>{
+  console.log('log: info', req.method, req.url);
+  next();
+}
+
+const verifyToken = (req, res, next) =>{
+  const token = req?.cookies?.token;
+  // console.log('token in the middleware', token);
+  // no token available 
+  if(!token){
+      return res.status(401).send({message: 'unauthorized access'})
+  }
+  jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, decoded) =>{
+      if(err){
+          return res.status(401).send({message: 'unauthorized access'})
+      }
+      req.user = decoded;
+      next();
+  })
+}
+
 
 async function run() {
   try {
@@ -45,6 +68,7 @@ async function run() {
     const userCollection = db.collection('user')
     const requestCollection = db.collection('Requested')
     const bookingCollection = db.collection('bookings')
+    const favoriteCollection = db.collection('favorite')
 
 
 
@@ -143,6 +167,15 @@ async function run() {
         res.status(500).send('Failed to add comment');
       }
 
+    })
+
+
+    app.put('/addFavorite', async (req,res) =>{
+      const contest = req.body;
+
+      const result = await favoriteCollection.insertOne(contest);
+      res.send(result);
+      
     })
 
 
@@ -257,6 +290,13 @@ async function run() {
       const result = await contestCollection.deleteOne({ _id: new ObjectId(id) });
       res.send(result);
     })
+    app.delete('/delete/user/:email', async (req, res) => {
+      const email = req.params.email;
+
+
+      const result = await userCollection.deleteOne({ email: email });
+      res.send(result);
+    })
 
 
 
@@ -283,6 +323,7 @@ async function run() {
       res.send(result)
 
     })
+    
 
     app.get('/user/:email', async (req, res) => {
       const email = req.params.email;
@@ -313,7 +354,7 @@ async function run() {
 
     })
 
-    app.get('/AllContest', async (req, res) => {
+    app.get('/AllContest',  async (req, res) => {
       const result = await contestCollection.find().toArray()
       res.send(result)
 
