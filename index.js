@@ -364,7 +364,18 @@ async function run() {
       res.send(result)
 
     })
+    app.get('/submittedContest/:email', async (req, res) => {
+      const email = req.params.email;
+      const query = {
+        CreatorEmail: email,
+      }
+      const result = await bookingCollection.find(query).toArray()
+      res.send(result);
+
+    })
     app.get('/submittedContest', async (req, res) => {
+     
+      
       const result = await bookingCollection.find().toArray()
       res.send(result)
 
